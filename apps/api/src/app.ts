@@ -14,6 +14,8 @@ import { createClientsRouter } from './modules/clients/routes';
 import { ClientService } from './modules/clients/service';
 import { createInvoicesRouter } from './modules/invoices/routes';
 import { InvoiceService } from './modules/invoices/service';
+import { createPaymentsRouter } from './modules/payments/routes';
+import { PaymentService } from './modules/payments/service';
 import { createUsersRouter } from './modules/users/routes';
 import { healthRouter } from './routes/health';
 
@@ -38,6 +40,7 @@ export function createApp({ db, config }: AppDependencies): Express {
   const authService = new AuthService({ db, tokens });
   const clientService = new ClientService(db);
   const invoiceService = new InvoiceService(db);
+  const paymentService = new PaymentService(db);
 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '1mb' }));
@@ -64,6 +67,7 @@ export function createApp({ db, config }: AppDependencies): Express {
     authenticate(tokens),
     requireWorkspace(db),
     createInvoicesRouter({ service: invoiceService }),
+    createPaymentsRouter({ service: paymentService }),
   );
 
   app.use(notFoundHandler);

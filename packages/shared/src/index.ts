@@ -2,6 +2,7 @@ export * from './api';
 export * from './clients';
 export * from './invoice-calculator';
 export * from './invoices';
+export * from './payments';
 export {
   MoneyFormatError,
   assertCurrencyCode,

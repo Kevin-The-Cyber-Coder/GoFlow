@@ -39,7 +39,7 @@ const MAX_SAFE_MINOR = BigInt(Number.MAX_SAFE_INTEGER);
  * Money is stored as bigint but JSON has no bigint. Every realistic amount fits
  * in a double exactly; anything larger is a bug we refuse to serialise silently.
  */
-function toMinorNumber(value: bigint): number {
+export function toMinorNumber(value: bigint): number {
   if (value > MAX_SAFE_MINOR || value < -MAX_SAFE_MINOR) {
     throw new AppError(
       500,
@@ -142,7 +142,7 @@ function toItemDto(row: InvoiceItemRow): InvoiceItem {
   };
 }
 
-function toSummary(row: InvoiceRow, clientName: string): InvoiceSummary {
+export function toSummary(row: InvoiceRow, clientName: string): InvoiceSummary {
   return {
     id: row.id,
     number: row.number,

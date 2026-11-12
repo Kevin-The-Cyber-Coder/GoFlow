@@ -5,9 +5,13 @@ import type { AppConfig } from './config/env';
 import type { Database } from './db/client';
 import { AppError } from './lib/errors';
 import { TokenService } from './lib/tokens';
+import { authenticate } from './middleware/authenticate';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
+import { requireWorkspace } from './middleware/workspace';
 import { createAuthRouter } from './modules/auth/routes';
 import { AuthService } from './modules/auth/service';
+import { createClientsRouter } from './modules/clients/routes';
+import { ClientService } from './modules/clients/service';
 import { createUsersRouter } from './modules/users/routes';
 import { healthRouter } from './routes/health';
 
@@ -30,6 +34,7 @@ export function createApp({ db, config }: AppDependencies): Express {
     refreshTokenTtlSeconds: config.refreshTokenTtlSeconds,
   });
   const authService = new AuthService({ db, tokens });
+  const clientService = new ClientService(db);
 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '1mb' }));
@@ -45,6 +50,12 @@ export function createApp({ db, config }: AppDependencies): Express {
     }),
   );
   app.use('/api/v1/users', createUsersRouter({ authService, tokens }));
+  app.use(
+    '/api/v1/clients',
+    authenticate(tokens),
+    requireWorkspace(db),
+    createClientsRouter({ service: clientService }),
+  );
 
   app.use(notFoundHandler);
   app.use(errorHandler);

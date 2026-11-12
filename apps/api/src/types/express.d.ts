@@ -5,6 +5,11 @@ declare global {
       auth?: {
         userId: string;
       };
+      /** Set by the `requireWorkspace` middleware. */
+      workspace?: {
+        workspaceId: string;
+        role: string;
+      };
     }
   }
 }

@@ -15,6 +15,7 @@
     "db:migrate": "tsx --env-file-if-exists=../../.env src/db/migrate-cli.ts"
   },
   "dependencies": {
+    "@goflow/shared": "^0.1.0",
     "@node-rs/argon2": "^2.2.2",
     "cookie-parser": "^1.4.7",
     "drizzle-orm": "^0.45.4",

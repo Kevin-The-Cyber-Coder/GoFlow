@@ -5,9 +5,9 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-freelanceflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-freelanceflow}
-      POSTGRES_DB: ${POSTGRES_DB:-freelanceflow}
+      POSTGRES_USER: ${POSTGRES_USER:-goflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-goflow}
+      POSTGRES_DB: ${POSTGRES_DB:-goflow}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
@@ -31,7 +31,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-freelanceflow}:${POSTGRES_PASSWORD:-freelanceflow}@postgres:5432/${POSTGRES_DB:-freelanceflow}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-goflow}:${POSTGRES_PASSWORD:-goflow}@postgres:5432/${POSTGRES_DB:-goflow}
     ports:
       - '${API_PORT:-3000}:3000'
     volumes:

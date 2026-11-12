@@ -58,8 +58,21 @@ export default tseslint.config(
     },
   },
   {
-    // The process entrypoint is where startup and shutdown messages belong.
-    files: ['apps/api/src/server.ts'],
+    // Build scripts run in Node and log their progress to the terminal.
+    files: ['apps/api/scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
+    // Entry points are where startup and shutdown messages belong.
+    files: ['apps/api/src/server.ts', 'apps/api/src/db/migrate-cli.ts'],
     rules: {
       'no-console': 'off',
     },

@@ -1,22 +1,34 @@
 import { createApp } from './app';
 import { loadConfig } from './config/env';
+import { createDatabase } from './db/client';
 
 const config = loadConfig();
-const app = createApp();
+const database = createDatabase(config.databaseUrl);
+const app = createApp({ db: database.db, config });
 
 const server = app.listen(config.port, () => {
   console.log(`GoFlow API listening on http://localhost:${config.port} (${config.nodeEnv})`);
 });
 
-function shutdown(signal: NodeJS.Signals): void {
-  console.log(`Received ${signal}, shutting down.`);
-  server.close((error) => {
-    if (error) {
-      console.error('Error while closing the HTTP server.', error);
-      process.exit(1);
-    }
+let shuttingDown = false;
 
-    process.exit(0);
+function shutdown(signal: NodeJS.Signals): void {
+  if (shuttingDown) {
+    return;
+  }
+
+  shuttingDown = true;
+  console.log(`Received ${signal}, shutting down.`);
+
+  server.close((serverError) => {
+    void database.close().finally(() => {
+      if (serverError) {
+        console.error('Error while closing the HTTP server.', serverError);
+        process.exit(1);
+      }
+
+      process.exit(0);
+    });
   });
 }
 

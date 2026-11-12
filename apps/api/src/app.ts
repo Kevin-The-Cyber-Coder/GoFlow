@@ -12,6 +12,8 @@ import { createAuthRouter } from './modules/auth/routes';
 import { AuthService } from './modules/auth/service';
 import { createClientsRouter } from './modules/clients/routes';
 import { ClientService } from './modules/clients/service';
+import { createInvoicesRouter } from './modules/invoices/routes';
+import { InvoiceService } from './modules/invoices/service';
 import { createUsersRouter } from './modules/users/routes';
 import { healthRouter } from './routes/health';
 
@@ -35,6 +37,7 @@ export function createApp({ db, config }: AppDependencies): Express {
   });
   const authService = new AuthService({ db, tokens });
   const clientService = new ClientService(db);
+  const invoiceService = new InvoiceService(db);
 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '1mb' }));
@@ -55,6 +58,12 @@ export function createApp({ db, config }: AppDependencies): Express {
     authenticate(tokens),
     requireWorkspace(db),
     createClientsRouter({ service: clientService }),
+  );
+  app.use(
+    '/api/v1/invoices',
+    authenticate(tokens),
+    requireWorkspace(db),
+    createInvoicesRouter({ service: invoiceService }),
   );
 
   app.use(notFoundHandler);

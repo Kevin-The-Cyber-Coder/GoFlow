@@ -1,5 +1,7 @@
 export * from './api';
 export * from './clients';
+export * from './invoice-calculator';
+export * from './invoices';
 export {
   MoneyFormatError,
   assertCurrencyCode,
@@ -9,3 +11,4 @@ export {
   sumMinor,
   type MinorUnits,
 } from './money';
+export { QuantityFormatError, formatQuantityMilli, parseQuantityToMilli } from './quantity';

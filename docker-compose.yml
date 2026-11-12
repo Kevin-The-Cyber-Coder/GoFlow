@@ -1,0 +1,73 @@
+name: goflow
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-freelanceflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-freelanceflow}
+      POSTGRES_DB: ${POSTGRES_DB:-freelanceflow}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Service health must reflect readiness to accept queries, not just that
+      # the process started. Dependent services wait for this check.
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: development
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-freelanceflow}:${POSTGRES_PASSWORD:-freelanceflow}@postgres:5432/${POSTGRES_DB:-freelanceflow}
+    ports:
+      - '${API_PORT:-3000}:3000'
+    volumes:
+      # Bind-mount only sources, never node_modules: the image owns its
+      # dependency tree and host installs must not shadow it.
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages/shared/src:/app/packages/shared/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider http://127.0.0.1:3000/api/v1/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: development
+    restart: unless-stopped
+    environment:
+      # The Vite dev server runs inside the container, where the API is
+      # reachable by service name rather than localhost.
+      VITE_API_PROXY_TARGET: http://api:3000
+    ports:
+      - '${WEB_PORT:-5173}:5173'
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/index.html:/app/apps/web/index.html
+      - ./apps/web/vite.config.ts:/app/apps/web/vite.config.ts
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

@@ -1,7 +1,7 @@
 export function App() {
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col justify-center gap-6 px-6 py-16">
-      <p className="text-sm font-semibold tracking-wide text-brand-600 uppercase">FreelanceFlow</p>
+      <p className="text-sm font-semibold tracking-wide text-brand-600 uppercase">GoFlow</p>
       <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
         Your freelance business. One workspace.
       </h1>

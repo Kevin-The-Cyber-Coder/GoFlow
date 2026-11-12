@@ -5,7 +5,7 @@ const config = loadConfig();
 const app = createApp();
 
 const server = app.listen(config.port, () => {
-  console.log(`FreelanceFlow API listening on http://localhost:${config.port} (${config.nodeEnv})`);
+  console.log(`GoFlow API listening on http://localhost:${config.port} (${config.nodeEnv})`);
 });
 
 function shutdown(signal: NodeJS.Signals): void {

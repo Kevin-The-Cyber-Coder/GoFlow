@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 # Shared dependency layer.
 #
-# The root `prepare` script builds @freelanceflow/shared during `npm ci`, so the
+# The root `prepare` script builds @goflow/shared during `npm ci`, so the
 # shared package sources must be present at install time even though only its
 # manifest is strictly required to resolve the workspace.
 # ---------------------------------------------------------------------------
@@ -25,15 +25,15 @@ FROM deps AS development
 ENV NODE_ENV=development
 COPY apps/api ./apps/api
 EXPOSE 3000
-CMD ["npm", "run", "dev", "-w", "@freelanceflow/api"]
+CMD ["npm", "run", "dev", "-w", "@goflow/api"]
 
 # ---------------------------------------------------------------------------
 # Build image: compiles the shared package and the API to plain JavaScript.
 # ---------------------------------------------------------------------------
 FROM deps AS build
 COPY apps/api ./apps/api
-RUN npm run build -w @freelanceflow/shared \
-  && npm run build -w @freelanceflow/api
+RUN npm run build -w @goflow/shared \
+  && npm run build -w @goflow/api
 
 # ---------------------------------------------------------------------------
 # Production image: runtime dependencies and compiled output only.

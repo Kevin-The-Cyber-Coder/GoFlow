@@ -18,14 +18,14 @@ FROM deps AS development
 ENV NODE_ENV=development
 COPY apps/web ./apps/web
 EXPOSE 5173
-CMD ["npm", "run", "dev", "-w", "@freelanceflow/web", "--", "--host", "0.0.0.0"]
+CMD ["npm", "run", "dev", "-w", "@goflow/web", "--", "--host", "0.0.0.0"]
 
 # ---------------------------------------------------------------------------
 # Build image: static assets for the production server.
 # ---------------------------------------------------------------------------
 FROM deps AS build
 COPY apps/web ./apps/web
-RUN npm run build -w @freelanceflow/web
+RUN npm run build -w @goflow/web
 
 # ---------------------------------------------------------------------------
 # Production image: nginx serves the static bundle and proxies /api to the API

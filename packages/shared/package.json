@@ -1,5 +1,5 @@
 {
-  "name": "@freelanceflow/shared",
+  "name": "@goflow/shared",
   "version": "0.1.0",
   "private": true,
   "description": "Shared contracts and pure helpers used by the API and the web app",

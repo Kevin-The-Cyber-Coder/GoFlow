@@ -1,8 +1,8 @@
 {
-  "name": "@freelanceflow/web",
+  "name": "@goflow/web",
   "version": "0.1.0",
   "private": true,
-  "description": "FreelanceFlow web client",
+  "description": "GoFlow web client",
   "type": "module",
   "scripts": {
     "dev": "vite",

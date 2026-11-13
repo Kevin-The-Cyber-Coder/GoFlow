@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { authRouter } from './modules/auth/routes';
+import { workspaceRouter } from './modules/workspaces/routes';
 import { healthRouter } from './routes/health';
 
 /**
@@ -24,6 +25,7 @@ export function createApp(): Express {
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/workspaces', workspaceRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

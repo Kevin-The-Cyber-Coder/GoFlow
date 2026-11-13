@@ -1,25 +1,13 @@
 import type { RequestHandler } from 'express';
-import type { WorkspaceRole } from '@prisma/client';
 
 import { getPrisma } from '../database/client';
 import { asyncHandler } from '../http/async-handler';
 import { ApiError } from '../http/errors';
 import { authContext } from './auth';
 import { can, type Permission } from '../modules/workspaces/permissions';
+import type { WorkspaceContext } from '../types/express';
 
-export interface WorkspaceContext {
-  readonly id: string;
-  readonly role: WorkspaceRole;
-  readonly userId: string;
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      workspace?: WorkspaceContext;
-    }
-  }
-}
+export type { WorkspaceContext };
 
 /**
  * Resolves the workspace a request operates on and verifies membership.

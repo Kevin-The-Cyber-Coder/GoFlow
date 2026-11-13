@@ -61,3 +61,42 @@ jobs:
           path: '**/coverage/lcov.info'
           if-no-files-found: ignore
           retention-days: 7
+
+  integration:
+    name: Integration tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: goflow
+          POSTGRES_PASSWORD: goflow
+          POSTGRES_DB: goflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U goflow -d goflow_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://goflow:goflow@localhost:5432/goflow_test
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run integration suite against PostgreSQL
+        run: npm run test:integration

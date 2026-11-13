@@ -64,5 +64,22 @@ export default tseslint.config(
       'no-console': 'off',
     },
   },
+  {
+    // Seed and tooling scripts report progress to the terminal by design.
+    files: ['apps/api/prisma/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        URL: 'readonly',
+      },
+    },
+  },
   prettier,
 );

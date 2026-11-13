@@ -1,0 +1,699 @@
+// GoFlow data model.
+//
+// Conventions enforced across this schema:
+//   * Every business record is scoped to a workspace; queries must always
+//     filter by workspaceId (see docs/ADR-006-workspace-data-isolation.md).
+//   * Money is stored as integer minor units (BigInt) plus an ISO-4217
+//     currency column. No floating point, ever.
+//   * Quantities are stored as integer thousandths (1.5 units -> 1500) so the
+//     invoice engine can multiply without leaving integer arithmetic.
+//   * Business records are archived or soft-deleted, never hard-deleted, so
+//     financial history stays auditable.
+//   * Timestamps are UTC.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  PENDING_VERIFICATION
+}
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String
+  name            String
+  avatarUrl       String?
+  locale          String     @default("en")
+  timezone        String     @default("UTC")
+  currency        String     @default("USD")
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  ownedWorkspaces     Workspace[]            @relation("WorkspaceOwner")
+  memberships         WorkspaceMember[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  emailTokens         EmailVerificationToken[]
+  notifications       Notification[]
+  notificationPrefs   NotificationPreference[]
+  auditLogs           AuditLog[]
+  createdClients      Client[]
+  createdInvoices     Invoice[]
+  recordedPayments    Payment[]
+  timeEntries         TimeEntry[]
+
+  @@index([email])
+  @@index([status])
+}
+
+model RefreshToken {
+  id               String    @id @default(uuid())
+  userId           String
+  tokenHash        String    @unique
+  familyId         String
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  replacedByTokenId String?
+  ip               String?
+  userAgent        String?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Workspaces and permissions
+// ---------------------------------------------------------------------------
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  ACCOUNTANT
+  PROJECT_MANAGER
+  EMPLOYEE
+  VIEWER
+}
+
+model Workspace {
+  id                 String    @id @default(uuid())
+  name               String
+  slug               String    @unique
+  ownerId            String
+  currency           String    @default("USD")
+  timezone           String    @default("UTC")
+  invoicePrefix      String    @default("INV")
+  nextInvoiceSequence Int      @default(1)
+  defaultTaxRateBps  Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  owner       User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members     WorkspaceMember[]
+  clients     Client[]
+  projects    Project[]
+  tasks       Task[]
+  services    Service[]
+  invoices    Invoice[]
+  payments    Payment[]
+  expenses    Expense[]
+  categories  ExpenseCategory[]
+  attachments Attachment[]
+  auditLogs   AuditLog[]
+  exports     ReportExport[]
+  recurring   RecurringInvoice[]
+  subscription Subscription?
+  timeEntries TimeEntry[]
+  notifications Notification[]
+
+  @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(VIEWER)
+  invitedById String?
+  invitedAt   DateTime      @default(now())
+  acceptedAt  DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// CRM
+// ---------------------------------------------------------------------------
+
+enum ClientStatus {
+  LEAD
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+model Client {
+  id             String       @id @default(uuid())
+  workspaceId    String
+  name           String
+  company        String?
+  email          String?
+  phone          String?
+  billingLine1   String?
+  billingLine2   String?
+  billingCity    String?
+  billingPostal  String?
+  billingCountry String?
+  category       String?
+  status         ClientStatus @default(LEAD)
+  notes          String?
+  tags           String[]     @default([])
+  archivedAt     DateTime?
+  deletedAt      DateTime?
+  createdById    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User            @relation(fields: [createdById], references: [id])
+  contacts  ClientContact[]
+  projects  Project[]
+  invoices  Invoice[]
+  expenses  Expense[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, name])
+  @@index([workspaceId, archivedAt])
+}
+
+model ClientContact {
+  id        String  @id @default(uuid())
+  clientId  String
+  name      String
+  email     String?
+  phone     String?
+  title     String?
+  isPrimary Boolean @default(false)
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+// ---------------------------------------------------------------------------
+// Projects and time
+// ---------------------------------------------------------------------------
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+model Project {
+  id            String          @id @default(uuid())
+  workspaceId   String
+  clientId      String
+  name          String
+  description   String?
+  status        ProjectStatus   @default(PLANNING)
+  priority      ProjectPriority @default(MEDIUM)
+  startDate     DateTime?
+  dueDate       DateTime?
+  completedAt   DateTime?
+  budgetMinor   BigInt?
+  currency      String          @default("USD")
+  archivedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  client     Client      @relation(fields: [clientId], references: [id])
+  tasks      Task[]
+  milestones Milestone[]
+  timeEntries TimeEntry[]
+  invoices   Invoice[]
+  expenses   Expense[]
+
+  @@index([workspaceId, status])
+  @@index([clientId])
+  @@index([workspaceId, dueDate])
+}
+
+model Task {
+  id              String     @id @default(uuid())
+  workspaceId     String
+  projectId       String
+  title           String
+  description     String?
+  status          TaskStatus @default(TODO)
+  dueDate         DateTime?
+  estimateMinutes Int?
+  position        Int        @default(0)
+  completedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  timeEntries TimeEntry[]
+
+  @@index([projectId, status])
+  @@index([workspaceId, dueDate])
+}
+
+model Milestone {
+  id          String    @id @default(uuid())
+  projectId   String
+  title       String
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model TimeEntry {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  projectId       String
+  taskId          String?
+  userId          String
+  minutes         Int
+  billable        Boolean  @default(true)
+  hourlyRateMinor BigInt?
+  date            DateTime
+  note            String?
+  createdAt       DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task      Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([workspaceId, date])
+  @@index([projectId])
+}
+
+model Service {
+  id             String    @id @default(uuid())
+  workspaceId    String
+  name           String
+  description    String?
+  unitPriceMinor BigInt
+  currency       String    @default("USD")
+  unit           String    @default("item")
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, name])
+}
+
+// ---------------------------------------------------------------------------
+// Invoicing
+// ---------------------------------------------------------------------------
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+  VOID
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  workspaceId    String
+  clientId       String
+  projectId      String?
+  number         String
+  status         InvoiceStatus @default(DRAFT)
+  issueDate      DateTime
+  dueDate        DateTime
+  currency       String        @default("USD")
+  subtotalMinor  BigInt
+  discountMinor  BigInt        @default(0)
+  taxMinor       BigInt        @default(0)
+  totalMinor     BigInt
+  notes          String?
+  terms          String?
+  template       String        @default("classic")
+  sentAt         DateTime?
+  paidAt         DateTime?
+  voidedAt       DateTime?
+  createdById    String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  client    Client        @relation(fields: [clientId], references: [id])
+  project   Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdBy User          @relation(fields: [createdById], references: [id])
+  items     InvoiceItem[]
+  payments  Payment[]
+
+  // Invoice numbers are unique per workspace, not globally: two unrelated
+  // freelancers may both legitimately issue INV-0001.
+  @@unique([workspaceId, number])
+  @@index([workspaceId, status, dueDate])
+  @@index([clientId])
+  @@index([workspaceId, issueDate])
+}
+
+model InvoiceItem {
+  id             String @id @default(uuid())
+  invoiceId      String
+  description    String
+  quantityMilli  Int
+  unitPriceMinor BigInt
+  discountMinor  BigInt @default(0)
+  taxRateBps     Int    @default(0)
+  totalMinor     BigInt
+  position       Int    @default(0)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+enum PaymentKind {
+  PAYMENT
+  REFUND
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
+  MOBILE_MONEY
+  CARD
+  OTHER
+}
+
+enum PaymentStatus {
+  COMPLETED
+  PENDING
+  FAILED
+  REVERSED
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  workspaceId      String
+  invoiceId        String
+  kind             PaymentKind   @default(PAYMENT)
+  status           PaymentStatus @default(COMPLETED)
+  amountMinor      BigInt
+  currency         String        @default("USD")
+  method           PaymentMethod @default(BANK_TRANSFER)
+  paidAt           DateTime
+  reference        String?
+  notes            String?
+  recordedById     String
+  refundOfPaymentId String?
+  idempotencyKey   String?
+  reversedAt       DateTime?
+  createdAt        DateTime      @default(now())
+
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id])
+  recordedBy      User      @relation(fields: [recordedById], references: [id])
+  refundOfPayment Payment?  @relation("PaymentRefunds", fields: [refundOfPaymentId], references: [id])
+  refunds         Payment[] @relation("PaymentRefunds")
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([invoiceId, status])
+  @@index([workspaceId, paidAt])
+}
+
+model RecurringInvoice {
+  id                String            @id @default(uuid())
+  workspaceId       String
+  clientId          String
+  templateInvoiceId String?
+  frequency         RecurringFrequency
+  intervalCount     Int               @default(1)
+  nextRunAt         DateTime
+  lastRunAt         DateTime?
+  active            Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([nextRunAt, active])
+  @@index([workspaceId])
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+// ---------------------------------------------------------------------------
+// Expenses
+// ---------------------------------------------------------------------------
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model ExpenseCategory {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String
+  color       String   @default("#64748b")
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  expenses  Expense[]
+
+  @@unique([workspaceId, name])
+}
+
+model Expense {
+  id          String        @id @default(uuid())
+  workspaceId String
+  categoryId  String?
+  projectId   String?
+  clientId    String?
+  description String
+  amountMinor BigInt
+  currency    String        @default("USD")
+  date        DateTime
+  method      PaymentMethod @default(OTHER)
+  vendor      String?
+  receiptKey  String?
+  status      ExpenseStatus @default(APPROVED)
+  notes       String?
+  recurring   Boolean       @default(false)
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category  ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  project   Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  client    Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, date])
+  @@index([workspaceId, categoryId])
+  @@index([projectId])
+}
+
+// ---------------------------------------------------------------------------
+// Supporting records
+// ---------------------------------------------------------------------------
+
+model Attachment {
+  id          String   @id @default(uuid())
+  workspaceId String
+  entityType  String
+  entityId    String
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  storageKey  String
+  uploadedById String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, entityType, entityId])
+}
+
+enum NotificationType {
+  INVOICE_DUE
+  INVOICE_OVERDUE
+  PAYMENT_RECEIVED
+  CLIENT_CREATED
+  PROJECT_DEADLINE
+  EXPENSE_CREATED
+  SECURITY_ALERT
+  SYSTEM
+}
+
+model Notification {
+  id          String            @id @default(uuid())
+  userId      String
+  workspaceId String?
+  type        NotificationType
+  title       String
+  body        String
+  entityType  String?
+  entityId    String?
+  readAt      DateTime?
+  createdAt   DateTime          @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+model NotificationPreference {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  inApp     Boolean          @default(true)
+  email     Boolean          @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+}
+
+model EmailLog {
+  id            String    @id @default(uuid())
+  userId        String?
+  to            String
+  subject       String
+  template      String
+  status        String    @default("QUEUED")
+  error         String?
+  attempts      Int       @default(0)
+  lastAttemptAt DateTime?
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([to])
+  @@index([status])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  workspaceId String?
+  actorId     String?
+  actorEmail  String?
+  action      String
+  entityType  String
+  entityId    String?
+  metadata    Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  actor     User?      @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+}
+
+enum ReportFormat {
+  PDF
+  CSV
+  XLSX
+}
+
+enum ReportStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+model ReportExport {
+  id          String       @id @default(uuid())
+  workspaceId String
+  type        String
+  format      ReportFormat
+  params      Json
+  status      ReportStatus @default(PENDING)
+  storageKey  String?
+  requestedById String
+  createdAt   DateTime     @default(now())
+  completedAt DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+model Subscription {
+  id               String   @id @default(uuid())
+  workspaceId      String   @unique
+  plan             String   @default("free")
+  status           String   @default("active")
+  currentPeriodEnd DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}

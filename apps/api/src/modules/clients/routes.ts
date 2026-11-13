@@ -6,10 +6,12 @@ import { requirePermission, resolveWorkspace, workspaceContext } from '../../mid
 import {
   contactSchema,
   createClientSchema,
+  importClientsSchema,
   listClientsSchema,
   updateClientSchema,
   updateContactSchema,
 } from './schemas';
+import { exportClientsCsv, importClients } from './csv';
 import {
   addContact,
   createClient,
@@ -54,6 +56,33 @@ clientRouter.post(
     const input = createClientSchema.parse(req.body);
     const client = await createClient(id, userId, email, input, metaOf(req));
     res.status(201).json({ client });
+  }),
+);
+
+clientRouter.get(
+  '/export',
+  requirePermission('clients:read'),
+  asyncHandler(async (req, res) => {
+    const { id } = workspaceContext(req);
+    const csv = await exportClientsCsv(id);
+    const date = new Date().toISOString().slice(0, 10);
+    res
+      .status(200)
+      .type('text/csv')
+      .set('Content-Disposition', `attachment; filename="clients-${date}.csv"`)
+      .send(csv);
+  }),
+);
+
+clientRouter.post(
+  '/import',
+  requirePermission('clients:write'),
+  asyncHandler(async (req, res) => {
+    const { id, userId } = workspaceContext(req);
+    const { email } = authContext(req);
+    const input = importClientsSchema.parse(req.body);
+    const summary = await importClients(id, userId, email, input.csv, input.dryRun, metaOf(req));
+    res.status(input.dryRun ? 200 : 201).json({ import: summary });
   }),
 );
 

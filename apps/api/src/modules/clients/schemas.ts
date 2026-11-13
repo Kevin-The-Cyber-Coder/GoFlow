@@ -52,6 +52,12 @@ export const updateContactSchema = contactSchema
   .partial()
   .refine((value) => Object.keys(value).length > 0, { message: 'Provide at least one field.' });
 
+export const importClientsSchema = z.object({
+  csv: z.string().min(1, 'Provide the CSV contents.').max(2_000_000, 'The file is too large.'),
+  dryRun: z.boolean().default(false),
+});
+
+export type ImportClientsInput = z.infer<typeof importClientsSchema>;
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 export type ListClientsQuery = z.infer<typeof listClientsSchema>;

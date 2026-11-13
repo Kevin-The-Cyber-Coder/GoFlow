@@ -54,7 +54,14 @@ if (exitCode === 0) {
 }
 
 if (embedded !== undefined) {
-  await embedded.stop();
+  // The embedded server may try to purge its data directory as part of the
+  // shutdown. On Windows the postmaster can still hold a handle for a moment,
+  // so cleanup problems are reported but never allowed to mask the test result.
+  try {
+    await embedded.stop();
+  } catch (error) {
+    console.warn(`[integration] embedded PostgreSQL shutdown reported: ${String(error)}`);
+  }
 }
 if (dataDir !== undefined) {
   // On Windows the postmaster can still hold handles for a moment after

@@ -25,6 +25,7 @@ export type Permission =
   | 'projects:delete'
   | 'time:read'
   | 'time:write'
+  | 'time:manage'
   | 'invoices:read'
   | 'invoices:write'
   | 'invoices:send'
@@ -58,6 +59,7 @@ export const ALL_PERMISSIONS: readonly Permission[] = [
   'projects:delete',
   'time:read',
   'time:write',
+  'time:manage',
   'invoices:read',
   'invoices:write',
   'invoices:send',
@@ -84,6 +86,7 @@ const ACCOUNTANT_PERMISSIONS: readonly Permission[] = [
   'clients:read',
   'projects:read',
   'time:read',
+  'time:manage',
   'invoices:read',
   'invoices:write',
   'invoices:send',
@@ -108,6 +111,7 @@ const PROJECT_MANAGER_PERMISSIONS: readonly Permission[] = [
   'projects:delete',
   'time:read',
   'time:write',
+  'time:manage',
   'expenses:read',
   'expenses:write',
   'invoices:read',

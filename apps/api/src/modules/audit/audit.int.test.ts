@@ -132,7 +132,7 @@ describe('audit log', () => {
     expect(byAction.body.meta.total).toBe(1);
 
     const byActor = await api(owner).get(
-      `/audit?search=${encodeURIComponent(owner.email.split('@')[0])}`,
+      `/audit?search=${encodeURIComponent(owner.email.slice(0, owner.email.indexOf('@')))}`,
     );
     expect(byActor.body.meta.total).toBeGreaterThanOrEqual(1);
 

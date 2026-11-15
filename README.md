@@ -159,4 +159,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, branch naming, commit conventi
 
 ## License
 
-This is a private repository. All rights reserved; no license is granted for reuse.
+MIT — see [LICENSE](LICENSE).

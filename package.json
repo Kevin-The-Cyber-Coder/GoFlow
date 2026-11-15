@@ -2,6 +2,7 @@
   "name": "goflow",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Freelancer business management platform",
   "workspaces": [
     "apps/*",

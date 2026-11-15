@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { getPrisma } from '../../database/client';
 import { ApiError } from '../../http/errors';
 import { money, pageMeta, toPagination } from '../../http/pagination';
+import { billableValueMinor } from '../../domain/billing';
 import { recordAudit } from '../audit/service';
 import type { RequestMeta } from '../clients/service';
 import type { CreateProjectInput, ListProjectsQuery, UpdateProjectInput } from './schemas';
@@ -147,18 +148,15 @@ export async function getProject(workspaceId: string, projectId: string) {
 
   let loggedMinutes = 0;
   let billableMinutes = 0;
-  let billableRateProduct = 0n;
   for (const entry of entries) {
     loggedMinutes += entry.minutes;
     if (entry.billable) {
       billableMinutes += entry.minutes;
-      billableRateProduct += BigInt(entry.minutes) * (entry.hourlyRateMinor ?? 0n);
     }
   }
 
-  // Rates are stored per hour while time is stored in minutes. Sum the
-  // products first and divide once so per-entry truncation cannot accumulate.
-  const billableValueMinor = billableRateProduct === 0n ? 0n : (billableRateProduct + 30n) / 60n;
+  // Rates are per hour while time is per minute; see domain/billing.ts.
+  const valueMinor = billableValueMinor(entries);
 
   const budgetMinor = project.budgetMinor;
   const invoicedMinor = invoiced._sum.totalMinor ?? 0n;
@@ -168,7 +166,7 @@ export async function getProject(workspaceId: string, projectId: string) {
     time: {
       loggedMinutes,
       billableMinutes,
-      billableValueMinor: money(billableValueMinor),
+      billableValueMinor: money(valueMinor),
     },
     billing: {
       invoicedMinor: money(invoicedMinor),

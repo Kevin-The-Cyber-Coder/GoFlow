@@ -157,6 +157,10 @@ Next: payments and reconciliation, expenses, reports and exports, notifications,
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, branch naming, commit conventions and the review checklist. Architecture decisions are recorded in [`docs/architecture/`](docs/architecture/).
 
+## Security
+
+Please report vulnerabilities privately through the [security policy](SECURITY.md) rather than in a public issue.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

@@ -47,6 +47,8 @@ cp .env.example .env          # Windows: copy .env.example .env
 
 # 3. Start PostgreSQL (or point DATABASE_URL at an existing server)
 docker compose up -d postgres
+# No Docker? `npm run db:dev` starts a persistent embedded PostgreSQL on
+# port 55432 in ~/.goflow/postgres and prints the DATABASE_URL to use.
 
 # 4. Apply the schema
 npm run db:deploy            # migrations only; use `npm run db:migrate` while developing
@@ -88,6 +90,7 @@ Values are read from the environment (`.env` for local development).
 | `npm test`                         | Unit tests (no database required)                  |
 | `npm run test:integration`         | Integration tests against a real PostgreSQL server |
 | `npm run db:migrate` / `db:deploy` | Create a migration / apply committed migrations    |
+| `npm run db:dev`                   | Start a persistent embedded PostgreSQL (no Docker) |
 | `npm run db:seed`                  | Populate the demo workspace                        |
 | `npm run db:studio`                | Open Prisma Studio                                 |
 

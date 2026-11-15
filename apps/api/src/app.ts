@@ -3,6 +3,7 @@ import express, { type Express } from 'express';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { authRouter } from './modules/auth/routes';
 import { clientRouter } from './modules/clients/routes';
+import { invoiceRouter } from './modules/invoices/routes';
 import { projectRouter } from './modules/projects/routes';
 import { timeRouter } from './modules/time/routes';
 import { userRouter } from './modules/users/routes';
@@ -31,6 +32,7 @@ export function createApp(): Express {
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/workspaces', workspaceRouter);
   app.use('/api/v1/clients', clientRouter);
+  app.use('/api/v1/invoices', invoiceRouter);
   app.use('/api/v1/projects', projectRouter);
   app.use('/api/v1/time', timeRouter);
   app.use('/api/v1/users', userRouter);

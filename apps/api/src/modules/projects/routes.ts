@@ -5,6 +5,12 @@ import { authContext, requireAuth } from '../../middleware/auth';
 import { requirePermission, resolveWorkspace, workspaceContext } from '../../middleware/workspace';
 import { createProjectSchema, listProjectsSchema, updateProjectSchema } from './schemas';
 import {
+  createTaskSchema,
+  listTasksSchema,
+  reorderTasksSchema,
+  updateTaskSchema,
+} from './task-schemas';
+import {
   createProject,
   deleteProject,
   getProject,
@@ -12,6 +18,7 @@ import {
   setProjectArchived,
   updateProject,
 } from './service';
+import { createTask, deleteTask, listTasks, reorderTasks, updateTask } from './task-service';
 
 export const projectRouter: Router = Router();
 
@@ -117,6 +124,78 @@ projectRouter.delete(
     const { id, userId } = workspaceContext(req);
     const { email } = authContext(req);
     await deleteProject(id, userId, email, param(req, 'projectId'), metaOf(req));
+    res.status(204).send();
+  }),
+);
+
+projectRouter.get(
+  '/:projectId/tasks',
+  requirePermission('projects:read'),
+  asyncHandler(async (req, res) => {
+    const { id } = workspaceContext(req);
+    const query = listTasksSchema.parse(req.query);
+    res.status(200).json(await listTasks(id, param(req, 'projectId'), query));
+  }),
+);
+
+projectRouter.post(
+  '/:projectId/tasks',
+  requirePermission('projects:write'),
+  asyncHandler(async (req, res) => {
+    const { id, userId } = workspaceContext(req);
+    const { email } = authContext(req);
+    const input = createTaskSchema.parse(req.body);
+    const task = await createTask(id, userId, email, param(req, 'projectId'), input, metaOf(req));
+    res.status(201).json({ task });
+  }),
+);
+
+projectRouter.post(
+  '/:projectId/tasks/reorder',
+  requirePermission('projects:write'),
+  asyncHandler(async (req, res) => {
+    const { id, userId } = workspaceContext(req);
+    const { email } = authContext(req);
+    const input = reorderTasksSchema.parse(req.body);
+    const result = await reorderTasks(
+      id,
+      userId,
+      email,
+      param(req, 'projectId'),
+      input,
+      metaOf(req),
+    );
+    res.status(200).json(result);
+  }),
+);
+
+projectRouter.patch(
+  '/:projectId/tasks/:taskId',
+  requirePermission('projects:write'),
+  asyncHandler(async (req, res) => {
+    const { id, userId } = workspaceContext(req);
+    const { email } = authContext(req);
+    const input = updateTaskSchema.parse(req.body);
+    const task = await updateTask(
+      id,
+      userId,
+      email,
+      param(req, 'projectId'),
+      param(req, 'taskId'),
+      input,
+      metaOf(req),
+    );
+    res.status(200).json({ task });
+  }),
+);
+
+projectRouter.delete(
+  '/:projectId/tasks/:taskId',
+  requirePermission('projects:write'),
+  asyncHandler(async (req, res) => {
+    const { id, userId } = workspaceContext(req);
+    const { email } = authContext(req);
+    await deleteTask(id, userId, email, param(req, 'projectId'), param(req, 'taskId'), metaOf(req));
     res.status(204).send();
   }),
 );

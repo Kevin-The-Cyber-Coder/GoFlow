@@ -305,7 +305,9 @@ async function main(): Promise<void> {
       clientId: lumen.id,
       createdById: user.id,
       number: 'INV-0003',
-      status: 'OVERDUE',
+      // Overdue is derived from the due date, not stored: an invoice becomes
+      // overdue with the passage of time, so this one is simply still sent.
+      status: 'SENT',
       issueDate: daysFromNow(-45),
       dueDate: daysFromNow(-15),
       currency: 'USD',

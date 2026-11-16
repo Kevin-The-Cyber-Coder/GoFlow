@@ -56,13 +56,13 @@ Worth knowing before you test:
 - **Every tenant-owned query filters on the workspace resolved from the request**, and a resource belonging to another workspace returns `404` rather than `403` so ids cannot be used to probe for existence.
 - **All request bodies and query strings are validated with Zod** before they reach a service.
 - **Money is integer minor units throughout**; no floating point touches an amount.
-- **Security headers (helmet) and an explicit CORS allowlist** are applied to every API request. Cross-origin browser access is denied unless the origin is listed in `CORS_ORIGINS`.
+- **Security headers (helmet), an explicit CORS allowlist and per-IP rate limiting** are applied to every API request. Cross-origin browser access is denied unless the origin is listed in `CORS_ORIGINS`; authentication endpoints have a stricter budget than the rest of the API; the health check is exempt.
 
 ## Known gaps
 
 These are tracked, not surprises:
 
-- No rate limiting yet. The middleware is planned; reports that only confirm its absence are duplicates.
+- **Rate-limit counters live in process memory.** Each API instance counts separately, and a restart clears them. Running more than one instance behind a load balancer needs a shared store (Redis) before the limits mean what they say.
 - No CSRF protection, because authentication is a bearer token rather than a cookie.
 - No email verification requirement for actions beyond account creation, and no outbound email at all yet.
 - No dependency scanning beyond Dependabot updates.

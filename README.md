@@ -158,7 +158,7 @@ Every test file truncates the database between cases, and integration tests cove
 
 Implemented: authentication and sessions, workspaces and RBAC, clients and CSV, projects and board tasks, time tracking, invoice drafting and lifecycle.
 
-Next: report exports, notifications, security hardening, the web application shell, invoice PDFs, and end-to-end browser tests.
+Next: report exports, notifications, the web application shell, invoice PDFs, and end-to-end browser tests.
 
 ## Contributing
 

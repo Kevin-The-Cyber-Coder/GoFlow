@@ -109,6 +109,7 @@ Base path: `/api/v1`. Authenticated requests send `Authorization: Bearer <access
 | Time       | `/time`       | `/entries` CRUD and `/summary`                                          |
 | Invoices   | `/invoices`   | drafts, items, `/issue`, `/void`                                        |
 | Payments   | `/payments`   | ledger, idempotent record, `/reverse`, derived invoice status           |
+| Expenses   | `/expenses`   | categories, CRUD, submission and review, date and vendor filters        |
 | Audit      | `/audit`      | workspace trail, filtered by action, entity, actor and date             |
 
 ```bash
@@ -156,7 +157,7 @@ Every test file truncates the database between cases, and integration tests cove
 
 Implemented: authentication and sessions, workspaces and RBAC, clients and CSV, projects and board tasks, time tracking, invoice drafting and lifecycle.
 
-Next: payments and reconciliation, expenses, reports and exports, notifications, security hardening, the web application shell, invoice PDFs, and end-to-end browser tests.
+Next: reports and exports, notifications, security hardening, the web application shell, invoice PDFs, and end-to-end browser tests.
 
 ## Contributing
 

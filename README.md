@@ -108,6 +108,7 @@ Base path: `/api/v1`. Authenticated requests send `Authorization: Bearer <access
 | Projects   | `/projects`   | CRUD, archive/restore, nested `/tasks` and `/tasks/reorder`             |
 | Time       | `/time`       | `/entries` CRUD and `/summary`                                          |
 | Invoices   | `/invoices`   | drafts, items, `/issue`, `/void`                                        |
+| Audit      | `/audit`      | workspace trail, filtered by action, entity, actor and date             |
 
 ```bash
 # Register (creates a personal workspace) and capture tokens

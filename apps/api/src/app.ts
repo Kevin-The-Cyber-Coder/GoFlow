@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
+import { corsMiddleware, securityHeaders } from './middleware/security';
 import { auditRouter } from './modules/audit/routes';
 import { authRouter } from './modules/auth/routes';
 import { clientRouter } from './modules/clients/routes';
@@ -24,6 +25,8 @@ export function createApp(): Express {
   const app = express();
 
   app.disable('x-powered-by');
+  app.use(securityHeaders());
+  app.use(corsMiddleware());
   app.use(express.json({ limit: '1mb' }));
 
   // Behind a proxy the client IP must come from the forwarded header, but

@@ -42,7 +42,7 @@ In scope:
 Out of scope:
 
 - reports that require an already-compromised machine, browser extension or database access,
-- missing security headers, rate limiting or other hardening items listed below as known gaps,
+- hardening items listed below as known gaps,
 - denial of service by volume against a development server,
 - findings from automated scanners with no demonstrated impact,
 - social engineering.
@@ -56,12 +56,13 @@ Worth knowing before you test:
 - **Every tenant-owned query filters on the workspace resolved from the request**, and a resource belonging to another workspace returns `404` rather than `403` so ids cannot be used to probe for existence.
 - **All request bodies and query strings are validated with Zod** before they reach a service.
 - **Money is integer minor units throughout**; no floating point touches an amount.
+- **Security headers (helmet) and an explicit CORS allowlist** are applied to every API request. Cross-origin browser access is denied unless the origin is listed in `CORS_ORIGINS`.
 
 ## Known gaps
 
 These are tracked, not surprises:
 
-- No security headers (helmet), no CORS allowlist and no rate limiting yet. The middleware is planned; reports that only confirm their absence are duplicates.
+- No rate limiting yet. The middleware is planned; reports that only confirm its absence are duplicates.
 - No CSRF protection, because authentication is a bearer token rather than a cookie.
 - No email verification requirement for actions beyond account creation, and no outbound email at all yet.
 - No dependency scanning beyond Dependabot updates.

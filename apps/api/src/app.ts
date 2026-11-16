@@ -1,7 +1,12 @@
 import express, { type Express } from 'express';
 
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
-import { corsMiddleware, securityHeaders } from './middleware/security';
+import {
+  apiRateLimiter,
+  authRateLimiter,
+  corsMiddleware,
+  securityHeaders,
+} from './middleware/security';
 import { auditRouter } from './modules/audit/routes';
 import { authRouter } from './modules/auth/routes';
 import { clientRouter } from './modules/clients/routes';
@@ -30,12 +35,17 @@ export function createApp(): Express {
   app.use(express.json({ limit: '1mb' }));
 
   // Behind a proxy the client IP must come from the forwarded header, but
-  // only when the deployment explicitly opts in (see TRUST_PROXY).
+  // only when the deployment explicitly opts in (see TRUST_PROXY). This has to
+  // happen before the rate limiters read `req.ip`.
   if (process.env.TRUST_PROXY === '1') {
     app.set('trust proxy', 1);
   }
 
+  // Health is mounted before the limiters so a platform's liveness probe
+  // cannot exhaust the API budget.
   app.use('/api/v1', healthRouter);
+  app.use('/api/v1', apiRateLimiter());
+  app.use('/api/v1/auth', authRateLimiter());
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/audit', auditRouter);
   app.use('/api/v1/workspaces', workspaceRouter);

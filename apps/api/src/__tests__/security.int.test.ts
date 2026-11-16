@@ -91,4 +91,73 @@ describe('security middleware', () => {
       expect(response.headers['access-control-max-age']).toBe('600');
     });
   });
+
+  it('returns the standard envelope when the API limit is exceeded', async () => {
+    await withEnv({ NODE_ENV: 'test', RATE_LIMIT_ENABLED: '1', RATE_LIMIT_MAX: '2' }, async () => {
+      const app = createApp();
+
+      // Health is mounted before the limiter and must stay unlimited.
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        expect((await request(app).get('/api/v1/health')).status).toBe(200);
+      }
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const allowed = await request(app).get('/api/v1/workspaces');
+        expect(allowed.status).not.toBe(429);
+        expect(allowed.headers['ratelimit']).toBeDefined();
+      }
+
+      const blocked = await request(app).get('/api/v1/workspaces');
+      expect(blocked.status).toBe(429);
+      expect(blocked.body.error.code).toBe('RATE_LIMITED');
+      expect(blocked.body.error.message).toContain('Too many requests');
+    });
+  });
+
+  it('applies a stricter limit to authentication routes', async () => {
+    await withEnv(
+      {
+        NODE_ENV: 'test',
+        RATE_LIMIT_ENABLED: '1',
+        RATE_LIMIT_MAX: '300',
+        AUTH_RATE_LIMIT_MAX: '2',
+      },
+      async () => {
+        const app = createApp();
+
+        // An empty body is rejected by validation before any database work, so
+        // these attempts only exercise the limiter.
+        expect((await request(app).post('/api/v1/auth/login').send({})).status).toBe(400);
+        expect((await request(app).post('/api/v1/auth/login').send({})).status).toBe(400);
+
+        const blocked = await request(app).post('/api/v1/auth/login').send({});
+        expect(blocked.status).toBe(429);
+        expect(blocked.body.error.code).toBe('RATE_LIMITED');
+        expect(blocked.body.error.message).toContain('authentication');
+      },
+    );
+  });
+
+  it('leaves rate limiting off under test unless it is enabled', async () => {
+    await withEnv(
+      { NODE_ENV: 'test', RATE_LIMIT_ENABLED: undefined, RATE_LIMIT_MAX: '1' },
+      async () => {
+        const app = createApp();
+
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          expect((await request(app).get('/api/v1/workspaces')).status).not.toBe(429);
+        }
+      },
+    );
+  });
+
+  it('fails fast on an invalid limit', async () => {
+    await withEnv({ NODE_ENV: 'test', RATE_LIMIT_ENABLED: '1', RATE_LIMIT_MAX: '0' }, () => {
+      expect(() => createApp()).toThrow(/Invalid RATE_LIMIT_MAX/);
+    });
+
+    await withEnv({ NODE_ENV: 'test', RATE_LIMIT_ENABLED: '1', AUTH_RATE_LIMIT_MAX: 'ten' }, () => {
+      expect(() => createApp()).toThrow(/Invalid AUTH_RATE_LIMIT_MAX/);
+    });
+  });
 });

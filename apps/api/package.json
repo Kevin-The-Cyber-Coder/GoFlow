@@ -12,6 +12,7 @@
     "test": "jest",
     "test:integration": "node scripts/run-integration-tests.mjs",
     "test:coverage": "jest --coverage",
+    "db:dev": "node scripts/start-dev-database.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

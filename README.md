@@ -2,7 +2,7 @@
 
 GoFlow is a workspace for freelancers: clients, projects, tasks, tracked time and invoices in one place, built to answer the two questions that matter — _what do I owe my clients_ and _what am I owed_.
 
-This repository contains the REST API, the database schema and the web client that will consume it.
+This repository contains the REST API, the database schema and the React web client that consumes it.
 
 ## What is here
 
@@ -156,9 +156,9 @@ Every test file truncates the database between cases, and integration tests cove
 
 ## Status
 
-Implemented: authentication and sessions, workspaces and RBAC, clients and CSV, projects and board tasks, time tracking, invoice drafting and lifecycle.
+Implemented: authentication and sessions, workspaces and RBAC, clients and CSV, projects and board tasks, time tracking, invoice drafting and lifecycle, payments, expenses and summary reports. The web client has a marketing home page plus dedicated sign-in and get-started pages backed by the live auth API.
 
-Next: report exports, notifications, the web application shell, invoice PDFs, and end-to-end browser tests.
+Next: report exports, notifications, the signed-in workspace dashboard, invoice PDFs, and end-to-end browser tests.
 
 ## Contributing
 

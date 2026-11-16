@@ -8,6 +8,7 @@ import { expenseRouter } from './modules/expenses/routes';
 import { invoiceRouter } from './modules/invoices/routes';
 import { paymentRouter } from './modules/payments/routes';
 import { projectRouter } from './modules/projects/routes';
+import { reportRouter } from './modules/reports/routes';
 import { timeRouter } from './modules/time/routes';
 import { userRouter } from './modules/users/routes';
 import { workspaceRouter } from './modules/workspaces/routes';
@@ -39,6 +40,7 @@ export function createApp(): Express {
   app.use('/api/v1/expenses', expenseRouter);
   app.use('/api/v1/invoices', invoiceRouter);
   app.use('/api/v1/payments', paymentRouter);
+  app.use('/api/v1/reports', reportRouter);
   app.use('/api/v1/projects', projectRouter);
   app.use('/api/v1/time', timeRouter);
   app.use('/api/v1/users', userRouter);

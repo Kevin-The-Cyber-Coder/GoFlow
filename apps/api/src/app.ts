@@ -4,6 +4,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { auditRouter } from './modules/audit/routes';
 import { authRouter } from './modules/auth/routes';
 import { clientRouter } from './modules/clients/routes';
+import { expenseRouter } from './modules/expenses/routes';
 import { invoiceRouter } from './modules/invoices/routes';
 import { paymentRouter } from './modules/payments/routes';
 import { projectRouter } from './modules/projects/routes';
@@ -35,6 +36,7 @@ export function createApp(): Express {
   app.use('/api/v1/audit', auditRouter);
   app.use('/api/v1/workspaces', workspaceRouter);
   app.use('/api/v1/clients', clientRouter);
+  app.use('/api/v1/expenses', expenseRouter);
   app.use('/api/v1/invoices', invoiceRouter);
   app.use('/api/v1/payments', paymentRouter);
   app.use('/api/v1/projects', projectRouter);

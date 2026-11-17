@@ -138,6 +138,27 @@ describe('security middleware', () => {
     );
   });
 
+  it('keeps the strict authentication limit off profile lookups', async () => {
+    await withEnv(
+      {
+        NODE_ENV: 'test',
+        RATE_LIMIT_ENABLED: '1',
+        RATE_LIMIT_MAX: '300',
+        AUTH_RATE_LIMIT_MAX: '1',
+      },
+      async () => {
+        const app = createApp();
+
+        // Every page load revalidates the session with this endpoint, so it must
+        // use the general API budget rather than the login budget. Missing
+        // credentials stop at authentication, which is enough for this check.
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          expect((await request(app).get('/api/v1/auth/me')).status).toBe(401);
+        }
+      },
+    );
+  });
+
   it('leaves rate limiting off under test unless it is enabled', async () => {
     await withEnv(
       { NODE_ENV: 'test', RATE_LIMIT_ENABLED: undefined, RATE_LIMIT_MAX: '1' },

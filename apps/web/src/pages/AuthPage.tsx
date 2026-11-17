@@ -18,7 +18,7 @@ export function AuthPage({ mode, session, onAuthenticated, onSignOut }: AuthPage
 
   function handleAuthenticated(next: Session) {
     onAuthenticated(next);
-    navigate('/');
+    navigate('/app');
   }
 
   return (
@@ -180,16 +180,22 @@ function SignedIn({
 
       <div className="mt-6 grid gap-2">
         <Link
-          href="/"
+          href="/app"
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          Back to home
+          Open dashboard
           <Icon name="arrowRight" className="h-4 w-4" />
+        </Link>
+        <Link
+          href="/"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+        >
+          Back to home
         </Link>
         <button
           type="button"
           onClick={onSignOut}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
         >
           <Icon name="logOut" className="h-4 w-4" />
           Sign out
@@ -199,7 +205,7 @@ function SignedIn({
       <p className="mt-4 text-xs leading-relaxed text-slate-500">
         Sign out to{' '}
         {isSignUp ? 'create a workspace for a different account' : 'use a different account'}. The
-        workspace dashboard is the next piece we are building.
+        dashboard shows the live API data for your selected workspace.
       </p>
     </div>
   );

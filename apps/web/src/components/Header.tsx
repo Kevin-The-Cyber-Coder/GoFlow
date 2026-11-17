@@ -82,12 +82,16 @@ export function Header({ session, onSignOut }: HeaderProps) {
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pr-3 pl-1 text-sm font-medium text-slate-700 shadow-sm">
+              <Link
+                href="/app"
+                title="Open dashboard"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pr-3 pl-1 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-300 hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+              >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
                   {initials(session.user.name)}
                 </span>
                 <span className="max-w-40 truncate">{session.user.name}</span>
-              </span>
+              </Link>
               <button
                 type="button"
                 onClick={onSignOut}
@@ -162,24 +166,34 @@ export function Header({ session, onSignOut }: HeaderProps) {
                 </Link>
               </div>
             ) : (
-              <div className="flex items-center justify-between gap-3">
-                <span className="inline-flex min-w-0 items-center gap-2 text-sm font-medium text-slate-700">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
-                    {initials(session.user.name)}
-                  </span>
-                  <span className="truncate">{session.user.name}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeMenu();
-                    onSignOut();
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              <div className="space-y-2">
+                <Link
+                  href="/app"
+                  onClick={closeMenu}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
                 >
-                  <Icon name="logOut" className="h-4 w-4" />
-                  Sign out
-                </button>
+                  Open dashboard
+                  <Icon name="arrowRight" className="h-4 w-4" />
+                </Link>
+                <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-2">
+                  <span className="inline-flex min-w-0 items-center gap-2 text-sm font-medium text-slate-700">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
+                      {initials(session.user.name)}
+                    </span>
+                    <span className="truncate">{session.user.name}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu();
+                      onSignOut();
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <Icon name="logOut" className="h-4 w-4" />
+                    Sign out
+                  </button>
+                </div>
               </div>
             )}
           </div>

@@ -156,9 +156,9 @@ Every test file truncates the database between cases, and integration tests cove
 
 ## Status
 
-Implemented: authentication and sessions, workspaces and RBAC, clients and CSV, projects and board tasks, time tracking, invoice drafting and lifecycle, payments, expenses and summary reports. The web client has a marketing home page plus dedicated sign-in and get-started pages backed by the live auth API.
+Implemented: authentication and sessions, workspaces and RBAC, clients and CSV, projects and board tasks, time tracking, invoice drafting and lifecycle, payments, expenses and summary reports. The web client has a marketing home page, dedicated sign-in and get-started pages backed by the live auth API, and a signed-in dashboard that reads workspaces, summary reports and recent invoices with automatic access-token refresh.
 
-Next: report exports, notifications, the signed-in workspace dashboard, invoice PDFs, and end-to-end browser tests.
+Next: report exports, client and invoice management screens, workspace settings, invoice PDFs, notifications, and end-to-end browser tests.
 
 ## Contributing
 

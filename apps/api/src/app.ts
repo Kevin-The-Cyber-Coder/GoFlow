@@ -45,7 +45,12 @@ export function createApp(): Express {
   // cannot exhaust the API budget.
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', apiRateLimiter());
-  app.use('/api/v1/auth', authRateLimiter());
+  // Only the endpoints that accept or create credentials get the strict
+  // budget. Applying it to the whole auth router would throttle `GET /auth/me`,
+  // which every page load calls, and lock signed-in users out after a handful
+  // of reloads.
+  app.use('/api/v1/auth/login', authRateLimiter());
+  app.use('/api/v1/auth/register', authRateLimiter());
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/audit', auditRouter);
   app.use('/api/v1/workspaces', workspaceRouter);

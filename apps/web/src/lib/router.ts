@@ -1,21 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 function normalise(path: string): string {
   const trimmed = path.replace(/\/+$/, '');
   return trimmed === '' ? '/' : trimmed;
 }
 
-/** The current in-app path, kept in sync with back/forward navigation. */
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+
+  // Back/forward still arrives as popstate from the browser.
+  const onPopState = () => listener();
+  window.addEventListener('popstate', onPopState);
+
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener('popstate', onPopState);
+  };
+}
+
+/**
+ * The current in-app path. This is an external store rather than local state
+ * because a redirect can run its effect before the component that renders it
+ * has subscribed. `useSyncExternalStore` re-checks the snapshot after
+ * subscribing, so such a redirect still lands instead of leaving the app on
+ * the transition screen.
+ */
 export function usePathname(): string {
-  const [path, setPath] = useState(() => normalise(window.location.pathname));
-
-  useEffect(() => {
-    const update = () => setPath(normalise(window.location.pathname));
-    window.addEventListener('popstate', update);
-    return () => window.removeEventListener('popstate', update);
-  }, []);
-
-  return path;
+  return useSyncExternalStore(subscribe, () => normalise(window.location.pathname));
 }
 
 export function navigate(to: string): void {
@@ -26,6 +39,6 @@ export function navigate(to: string): void {
   }
 
   window.history.pushState({}, '', next);
-  window.dispatchEvent(new PopStateEvent('popstate'));
+  for (const listener of listeners) listener();
   window.scrollTo({ top: 0 });
 }

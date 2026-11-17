@@ -127,12 +127,12 @@ export function Home({ session, onSignOut }: HomeProps) {
       <Header session={session} onSignOut={onSignOut} />
 
       <main id="main" className="flex-1">
-        <Hero />
+        <Hero session={session} />
         <TrustStrip />
         <FeatureGrid />
         <HowItWorks />
         <WhyGoFlow />
-        <GetStarted />
+        <GetStarted session={session} />
       </main>
 
       <Footer />
@@ -140,7 +140,7 @@ export function Home({ session, onSignOut }: HomeProps) {
   );
 }
 
-function Hero() {
+function Hero({ session }: { session: Session | null }) {
   return (
     <section className="relative overflow-hidden">
       <div
@@ -173,19 +173,21 @@ function Hero() {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/get-started"
+              href={session === null ? '/get-started' : '/app'}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
-              Create your workspace
+              {session === null ? 'Create your workspace' : 'Open your dashboard'}
               <Icon name="arrowRight" className="h-4 w-4" />
             </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:outline-none"
-            >
-              <Icon name="logIn" className="h-4 w-4" />
-              Sign in
-            </Link>
+            {session === null && (
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                <Icon name="logIn" className="h-4 w-4" />
+                Sign in
+              </Link>
+            )}
           </div>
 
           <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
@@ -492,7 +494,7 @@ function WhyGoFlow() {
   );
 }
 
-function GetStarted() {
+function GetStarted({ session }: { session: Session | null }) {
   return (
     <section id="get-started" className="scroll-mt-24 px-4 pb-20 sm:px-6 sm:pb-24 lg:px-8">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-slate-950 px-6 py-14 text-center sm:px-12 sm:py-16">
@@ -518,18 +520,20 @@ function GetStarted() {
 
         <div className="relative mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
-            href="/get-started"
+            href={session === null ? '/get-started' : '/app'}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-900/40 transition hover:bg-brand-400 focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus-visible:outline-none"
           >
-            Create your workspace
+            {session === null ? 'Create your workspace' : 'Open your dashboard'}
             <Icon name="arrowRight" className="h-4 w-4" />
           </Link>
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus-visible:outline-none"
-          >
-            I already have an account
-          </Link>
+          {session === null && (
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus-visible:outline-none"
+            >
+              I already have an account
+            </Link>
+          )}
         </div>
 
         <p className="relative mt-5 text-sm text-slate-400">

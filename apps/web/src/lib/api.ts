@@ -1,11 +1,12 @@
 /**
- * A deliberately small API client for the public landing page. The dashboard
- * will grow a richer client later; this one only covers the endpoints the
- * sign-in/sign-up dialog needs.
+ * A deliberately small API client. It covers authentication plus the read-only
+ * endpoints the signed-in dashboard needs. Mutating endpoints are added one
+ * screen at a time, so the client never grows ahead of the UI.
  */
 
 const API_BASE = '/api/v1';
 const STORAGE_KEY = 'goflow.session';
+const WORKSPACE_KEY = 'goflow.workspace';
 
 export interface User {
   id: string;
@@ -26,24 +27,125 @@ export interface TokenPair {
   expiresIn: number;
 }
 
+export interface Membership {
+  workspaceId: string;
+  workspaceName: string;
+  workspaceSlug: string;
+  role: string;
+}
+
 export interface AuthProfile {
   user: User;
-  memberships: Array<{
-    id: string;
-    role: string;
-    workspace: { id: string; name: string; slug: string } | null;
-  }>;
+  memberships: Membership[];
 }
 
 export interface RegisterResult {
   user: User;
-  workspace: unknown;
+  workspace: {
+    workspaceId: string;
+    workspaceName: string;
+    workspaceSlug: string;
+    role: string;
+  };
   tokens: TokenPair;
 }
 
 export interface Session {
   user: User;
   tokens: TokenPair;
+}
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  slug: string;
+  currency: string;
+  timezone: string;
+  createdAt: string;
+  role: string;
+  memberCount: number;
+}
+
+export interface WorkspaceDetail {
+  id: string;
+  name: string;
+  slug: string;
+  currency: string;
+  timezone: string;
+  invoicePrefix: string;
+  defaultTaxRateBps: number;
+  createdAt: string;
+  counts: {
+    members: number;
+    clients: number;
+    projects: number;
+    invoices: number;
+  };
+}
+
+export interface ReportSummary {
+  currency: string;
+  from: string;
+  to: string;
+  incomeMinor: string;
+  expensesMinor: string;
+  netMinor: string;
+  outstandingMinor: string;
+  paymentCount: number;
+  expenseCount: number;
+  outstandingInvoiceCount: number;
+}
+
+export type InvoiceStatus =
+  'DRAFT' | 'SENT' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'CANCELLED' | 'VOID';
+
+export interface InvoiceListItem {
+  id: string;
+  number: string;
+  status: InvoiceStatus;
+  isOverdue: boolean;
+  currency: string;
+  issueDate: string;
+  dueDate: string;
+  client: { id: string; name: string; company: string | null; email: string | null };
+  project: { id: string; name: string } | null;
+  subtotalMinor: string;
+  discountMinor: string;
+  taxMinor: string;
+  totalMinor: string;
+  paidMinor: string;
+  dueMinor: string;
+  notes: string | null;
+  terms: string | null;
+  template: string;
+  sentAt: string | null;
+  paidAt: string | null;
+  voidedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: Array<{
+    id: string;
+    description: string;
+    quantityMilli: number;
+    unitPriceMinor: string;
+    discountMinor: string;
+    taxRateBps: number;
+    totalMinor: string;
+    position: number;
+  }>;
+}
+
+export interface PageMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
+export interface InvoiceList {
+  data: InvoiceListItem[];
+  meta: PageMeta;
 }
 
 export class ApiError extends Error {
@@ -127,6 +229,68 @@ export function logout(refreshToken: string): Promise<void> {
   });
 }
 
+/** Rotates a refresh token. The old token stops working once this succeeds. */
+export function refreshTokens(refreshToken: string): Promise<TokenPair> {
+  return request<TokenPair>('/auth/refresh', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  });
+}
+
+function authHeaders(accessToken: string, workspaceId?: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    ...(workspaceId === undefined ? {} : { 'X-Workspace-Id': workspaceId }),
+  };
+}
+
+export function listWorkspaces(accessToken: string): Promise<{ workspaces: WorkspaceSummary[] }> {
+  return request<{ workspaces: WorkspaceSummary[] }>('/workspaces', {
+    headers: authHeaders(accessToken),
+  });
+}
+
+export async function getWorkspace(
+  accessToken: string,
+  workspaceId: string,
+): Promise<WorkspaceDetail> {
+  const result = await request<{ workspace: WorkspaceDetail }>(
+    `/workspaces/${encodeURIComponent(workspaceId)}`,
+    { headers: authHeaders(accessToken, workspaceId) },
+  );
+  return result.workspace;
+}
+
+export function reportSummary(
+  accessToken: string,
+  workspaceId: string,
+  range: { from: string; to: string },
+): Promise<ReportSummary> {
+  const query = new URLSearchParams({ from: range.from, to: range.to });
+  return request<ReportSummary>(`/reports/summary?${query.toString()}`, {
+    headers: authHeaders(accessToken, workspaceId),
+  });
+}
+
+export function listInvoices(
+  accessToken: string,
+  workspaceId: string,
+  query: {
+    pageSize?: number;
+    sort?: 'issueDate' | 'dueDate' | 'number' | 'createdAt';
+    order?: 'asc' | 'desc';
+  } = {},
+): Promise<InvoiceList> {
+  const params = new URLSearchParams({
+    pageSize: String(query.pageSize ?? 5),
+    sort: query.sort ?? 'issueDate',
+    order: query.order ?? 'desc',
+  });
+  return request<InvoiceList>(`/invoices?${params.toString()}`, {
+    headers: authHeaders(accessToken, workspaceId),
+  });
+}
+
 export function readStoredSession(): Session | null {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -162,5 +326,23 @@ export function clearStoredSession(): void {
     window.localStorage.removeItem(STORAGE_KEY);
   } catch {
     // Ignore: private-mode storage can throw on access.
+  }
+}
+
+/** Remembers the last workspace so a reload lands on the same business. */
+export function readStoredWorkspaceId(): string | null {
+  try {
+    const value = window.localStorage.getItem(WORKSPACE_KEY);
+    return value !== null && value.length > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeWorkspaceId(workspaceId: string): void {
+  try {
+    window.localStorage.setItem(WORKSPACE_KEY, workspaceId);
+  } catch {
+    // The switcher still works for this visit if storage is blocked.
   }
 }
